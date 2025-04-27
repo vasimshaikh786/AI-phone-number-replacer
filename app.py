@@ -295,6 +295,9 @@ def replace_phone_number(image, phone_data, new_number):
         x, y, w, h = phone['bbox']
         original_number = phone['number']
         
+        # Debugging: Log the original and new numbers
+        st.write(f"Replacing '{original_number}' with '{new_number}'")
+        
         # Analyze style of the original number
         style = analyze_style(image, phone['bbox'])
         
@@ -331,36 +334,10 @@ def replace_phone_number(image, phone_data, new_number):
         color = tuple(int(c) for c in style['color'])
         
         # Create a rectangle to cover the original number
-        # Match background color by sampling area around the text
-        bg_x = max(0, x - 5)
-        bg_y = max(0, y - 5)
-        bg_w = min(image.width - bg_x, w + 10)
-        bg_h = min(image.height - bg_y, h + 10)
-        
-        # Sample background from slightly larger area
-        bg_region = np.array(image.crop((bg_x, bg_y, bg_x + bg_w, bg_y + bg_h)))
-        
-        # Create a mask to exclude text pixels from background sampling
-        mask = np.ones(bg_region.shape[:2], dtype=bool)
-        mask[5:5+h, 5:5+w] = False
-        
-        # Sample background color from non-text area
-        if np.any(mask):
-            bg_color = tuple(int(c) for c in np.mean(bg_region[mask], axis=0))
-        else:
-            # Fallback if mask is empty
-            bg_color = (255, 255, 255)
-        
-        # Draw the background rectangle
-        draw.rectangle([x, y, x+w, y+h], fill=bg_color)
-        
-        # Calculate text positioning to center in the space
-        text_width, text_height = draw.textsize(formatted_new_number, font=font)
-        text_x = x + (w - text_width) // 2
-        text_y = y + (h - text_height) // 2
+        draw.rectangle([x, y, x+w, y+h], fill=(255, 255, 255))  # White background
         
         # Draw the new number
-        draw.text((text_x, text_y), formatted_new_number, fill=color, font=font)
+        draw.text((x, y), formatted_new_number, fill=color, font=font)
     
     return result_image
 
@@ -381,6 +358,10 @@ def batch_process_images(images, new_number):
         for future in concurrent.futures.as_completed(futures):
             try:
                 result = future.result()
+                if result["success"]:
+                    st.write(f"Processed image successfully: {result['phone_numbers']}")
+                else:
+                    st.error(f"Error processing image: {result['error']}")
                 results.append(result)
             except Exception as e:
                 results.append({
