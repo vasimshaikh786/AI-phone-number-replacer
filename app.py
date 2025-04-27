@@ -11,6 +11,7 @@ import concurrent.futures
 import base64
 from datetime import datetime
 import time
+import zipfile
 
 # Set page configuration
 st.set_page_config(
@@ -607,7 +608,29 @@ with tab2:
         
         # Add option to download all results as a ZIP
         if st.button("Download All Results"):
-            st.warning("This feature would zip all processed images for download. For streamlit implementation, additional libraries would be needed.")
+            if st.session_state.batch_results:
+                # Create a temporary ZIP file
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".zip") as tmp_zip:
+                    with zipfile.ZipFile(tmp_zip.name, 'w') as zipf:
+                        for i, result in enumerate(st.session_state.batch_results):
+                            if result["success"]:
+                                # Save the result image to a temporary file
+                                with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_img:
+                                    result["result_image"].save(tmp_img.name, format="PNG")
+                                    # Add the image to the ZIP file
+                                    zipf.write(tmp_img.name, f"result_image_{i+1}.png")
+                                    os.unlink(tmp_img.name)  # Delete the temporary image file
+                    
+                    # Provide the ZIP file for download
+                    with open(tmp_zip.name, "rb") as f:
+                        zip_data = f.read()
+                        b64 = base64.b64encode(zip_data).decode()
+                        href = f'<a href="data:application/zip;base64,{b64}" download="processed_images.zip">Download All Results</a>'
+                        st.markdown(href, unsafe_allow_html=True)
+                    
+                    os.unlink(tmp_zip.name)  # Delete the temporary ZIP file
+            else:
+                st.warning("No results available to download.")
 
 # Add settings section
 with st.expander("Advanced Settings"):
