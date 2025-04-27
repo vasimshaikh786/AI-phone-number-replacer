@@ -395,28 +395,19 @@ def process_single_image(image, new_number):
         # Step 6: Replace phone numbers if any are found
         if phone_numbers:
             result_image = replace_phone_number(image, phone_numbers, new_number)
-            
-            # Record end time
-            end_time = time.time()
-            
-            return {
-                "success": True,
-                "original_image": image,
-                "result_image": result_image,
-                "phone_numbers": phone_numbers,
-                "processing_time": end_time - start_time
-            }
         else:
-            # Record end time
-            end_time = time.time()
-            
-            return {
-                "success": True,
-                "original_image": image,
-                "result_image": image,  # No changes
-                "phone_numbers": [],
-                "processing_time": end_time - start_time
-            }
+            result_image = image  # No changes if no phone numbers are found
+        
+        # Record end time
+        end_time = time.time()
+        
+        return {
+            "success": True,
+            "original_image": image,
+            "result_image": result_image,
+            "phone_numbers": phone_numbers,
+            "processing_time": end_time - start_time
+        }
     except Exception as e:
         return {
             "success": False,
