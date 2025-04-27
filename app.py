@@ -28,29 +28,32 @@ Upload an image containing phone numbers to get started.
 
 # Function to preprocess image for better OCR
 def preprocess_image(image):
-    # Convert to numpy array if it's a PIL Image
+    # Ensure the image is a NumPy array
     if isinstance(image, Image.Image):
         image_np = np.array(image)
     else:
         image_np = image
-    
+
+    # Check if the image has 3 channels (RGB) or 4 channels (RGBA)
+    if len(image_np.shape) == 3 and image_np.shape[2] == 4:
+        # Convert RGBA to RGB
+        image_np = cv2.cvtColor(image_np, cv2.COLOR_RGBA2RGB)
+
     # Convert to grayscale
     gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
-    
-    # Apply adaptive thresholding for varying lighting conditions
+
+    # Apply adaptive thresholding for better text detection
     thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-                                  cv2.THRESH_BINARY, 11, 2)
-    
-    # Noise reduction
+                                    cv2.THRESH_BINARY, 11, 2)
+
+    # Denoise the image to reduce noise
     denoised = cv2.fastNlMeansDenoising(thresh, None, 10, 7, 21)
-    
-    # Edge enhancement for better text detection
+
+    # Detect edges for better OCR
     edges = cv2.Canny(denoised, 100, 200)
-    
-    # Create a PIL Image from the processed numpy array
-    processed_image = Image.fromarray(denoised)
-    
-    return processed_image, denoised, edges, gray
+
+    # Return processed images
+    return image_np, gray, denoised, edges
 
 # Function to detect and correct image orientation
 def detect_and_correct_orientation(image):
@@ -571,7 +574,7 @@ with tab2:
         
         # Create an expander for each result
         for i, result in enumerate(st.session_state.batch_results):
-            with st.expander(f"Image {i+1} {'✅' if result['success'] else '❌'}"):
+            with st.expander(f"Image {i+1} {'✅' if result["success"] else '❌'}"):
                 if result["success"]:
                     if result["phone_numbers"]:
                         st.write(f"Found {len(result['phone_numbers'])} phone numbers")
