@@ -307,7 +307,7 @@ def replace_phone_number(image, phone_data, new_number):
         # Prepare to draw the new number
         try:
             # Try to get a system font with appropriate weight
-            font_size = int(style['font_size'] * 0.7)  # Adjust size for better fit
+            font_size = int(style['font_size'] * 0.7) # Adjust size for better fit
             
             # Select font based on bold detection
             if style['is_bold']:
@@ -326,20 +326,24 @@ def replace_phone_number(image, phone_data, new_number):
                         font = ImageFont.truetype("arial.ttf", font_size)
                     except:
                         font = ImageFont.load_default()
-        except:
-            # Fallback to default
-            font = ImageFont.load_default()
+            except:
+                # Fallback to default
+                font = ImageFont.load_default()
+            
+            # Convert color to RGB tuple
+            color = tuple(int(c) for c in style['color'])
+            
+            # Create a rectangle to cover the original number
+            draw.rectangle([x, y, x+w, y+h], fill=(255, 255, 255)) # White background
+            
+            # Draw the new number
+            draw.text((x, y), formatted_new_number, fill=color, font=font)
         
-        # Convert color to RGB tuple
-        color = tuple(int(c) for c in style['color'])
-        
-        # Create a rectangle to cover the original number
-        draw.rectangle([x, y, x+w, y+h], fill=(255, 255, 255))  # White background
-        
-        # Draw the new number
-        draw.text((x, y), formatted_new_number, fill=color, font=font)
+        except Exception as e:
+            st.error(f"Error replacing number: {e}")
     
     return result_image
+
 
 # Function to process a batch of images
 def batch_process_images(images, new_number):
